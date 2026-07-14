@@ -19,7 +19,6 @@
     .app-header { background: #1E293B; color: #fff; padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
     .app-header h1 { font-size: 18px; font-weight: 700; letter-spacing: -0.02em; }
     .app-header small { font-size: 11px; color: #94A3B8; display: block; margin-top: 2px; }
-    .header-count { font-size: 12px; color: #94A3B8; }
     .header-actions { display: flex; gap: 8px; align-items: center; }
     .header-btn { background: rgba(255,255,255,0.1); border: none; color: #94A3B8; width: 34px; height: 34px; border-radius: 8px; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; }
     .header-btn:hover { background: rgba(255,255,255,0.2); color: #fff; }
@@ -56,6 +55,7 @@
     .btn-sm { padding: 8px 16px; font-size: 13px; width: auto; }
     .btn-excel { background: #217346; color: #fff; }
     .btn-google { background: #4285F4; color: #fff; }
+    .btn-test { background: #F59E0B; color: #fff; }
     .actions { display: flex; flex-direction: column; gap: 10px; }
     .actions-row { display: flex; gap: 10px; }
     .actions-row .btn { flex: 1; }
@@ -74,9 +74,8 @@
     .detail-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #F3F4F6; }
     .detail-row:last-child { border-bottom: none; }
     .detail-label { color: var(--muted); font-size: 13px; }
-    .detail-value { font-weight: 500; font-size: 14px; text-align: right; max-width: 60%; }
-    .total-row { font-size: 15px; }
-    .total-row .detail-label { font-weight: 700; color: var(--text); }
+    .detail-value { font-weight: 500; font-size: 14px; text-align: right; max-width: 60%; word-break: break-word; }
+    .total-row .detail-label { font-weight: 700; color: var(--text); font-size: 15px; }
     .total-row .detail-value { font-weight: 800; font-size: 18px; color: var(--success); }
     .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
     .chip { display: inline-flex; align-items: center; gap: 4px; background: #F1F5F9; border: 1px solid var(--border); border-radius: 20px; padding: 4px 12px; font-size: 13px; cursor: pointer; }
@@ -92,24 +91,18 @@
     hr.divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
     .hidden { display: none !important; }
     .header-flex { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
-
-    /* Toast */
     .toast { position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%); background: #1E293B; color: #fff; padding: 12px 24px; border-radius: 10px; font-size: 14px; font-weight: 500; z-index: 999; opacity: 0; transition: opacity 0.3s; pointer-events: none; max-width: 90%; text-align: center; }
     .toast.show { opacity: 1; }
-
-    /* Sync indicator */
     .sync-status { display: flex; align-items: center; gap: 6px; font-size: 11px; padding: 4px 10px; border-radius: 12px; }
     .sync-status.connected { background: #D1FAE5; color: #065F46; }
     .sync-status.disconnected { background: #FEE2E2; color: #991B1B; }
     .sync-status .dot { width: 6px; height: 6px; border-radius: 50%; }
     .sync-status.connected .dot { background: #059669; }
     .sync-status.disconnected .dot { background: #DC2626; }
-
-    /* Modal overlay */
     .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 300; display: flex; align-items: center; justify-content: center; padding: 20px; }
     .modal { background: var(--card); border-radius: 12px; padding: 24px; max-width: 500px; width: 100%; max-height: 80vh; overflow-y: auto; }
     .modal h3 { margin-bottom: 16px; font-size: 16px; }
-
+    .log-box { background: #1E293B; color: #A5F3FC; padding: 12px; border-radius: 8px; font-family: monospace; font-size: 11px; max-height: 150px; overflow-y: auto; margin-top: 8px; white-space: pre-wrap; word-break: break-all; }
     @media (max-width: 480px) {
       .row { flex-direction: column; gap: 0; }
       .row .field { flex: unset; }
@@ -129,11 +122,9 @@
         <span class="dot"></span><span id="syncText">Sin sync</span>
       </span>
       <button class="header-btn" id="btnSettings" title="Configuración">⚙️</button>
-      <span class="header-count" id="headerCount"></span>
     </div>
   </div>
 
-  <!-- LIST VIEW -->
   <div id="viewList">
     <div class="tab-bar" id="tabBar"></div>
     <div class="search-bar"><input type="text" id="searchInput" placeholder="Buscar por nombre, orden, marca..."></div>
@@ -141,7 +132,6 @@
     <button class="fab" id="btnNewOrder" title="Nueva orden">+</button>
   </div>
 
-  <!-- NEW ORDER VIEW -->
   <div id="viewNew" class="hidden">
     <div class="container">
       <div class="header-flex">
@@ -151,19 +141,10 @@
       <div class="card">
         <div class="section-label">Datos del cliente</div>
         <div class="row">
-          <div class="field">
-            <label>Tipo</label>
-            <select id="fClientType"><option>Particular</option><option>Empresa</option></select>
-          </div>
-          <div class="field flex2">
-            <label>Nombre *</label>
-            <input id="fClientName" placeholder="Nombre completo">
-          </div>
+          <div class="field"><label>Tipo</label><select id="fClientType"><option>Particular</option><option>Empresa</option></select></div>
+          <div class="field flex2"><label>Nombre *</label><input id="fClientName" placeholder="Nombre completo"></div>
         </div>
-        <div class="field hidden" id="fCompanyWrap">
-          <label>Empresa</label>
-          <input id="fCompany" placeholder="Nombre de la empresa">
-        </div>
+        <div class="field hidden" id="fCompanyWrap"><label>Empresa</label><input id="fCompany" placeholder="Nombre de la empresa"></div>
         <div class="row">
           <div class="field"><label>Teléfono *</label><input id="fPhone" placeholder="10 dígitos" type="tel"></div>
           <div class="field"><label>Email</label><input id="fEmail" placeholder="Opcional" type="email"></div>
@@ -172,13 +153,7 @@
       <div class="card">
         <div class="section-label">Equipo</div>
         <div class="row">
-          <div class="field">
-            <label>Tipo de equipo</label>
-            <select id="fEquipType">
-              <option>Laptop</option><option>PC de escritorio</option><option>Impresora</option>
-              <option>Router/Switch</option><option>Servidor</option><option>Monitor</option><option>Otro</option>
-            </select>
-          </div>
+          <div class="field"><label>Tipo de equipo</label><select id="fEquipType"><option>Laptop</option><option>PC de escritorio</option><option>Impresora</option><option>Router/Switch</option><option>Servidor</option><option>Monitor</option><option>Otro</option></select></div>
           <div class="field"><label>Marca *</label><input id="fBrand" placeholder="HP, Dell, etc."></div>
         </div>
         <div class="row">
@@ -189,10 +164,7 @@
       <div class="card">
         <div class="section-label">Accesorios entregados</div>
         <div class="chips" id="accChips"></div>
-        <div class="acc-row">
-          <input id="accCustom" placeholder="Agregar otro accesorio...">
-          <button class="btn btn-outline btn-sm" id="btnAddAcc">+</button>
-        </div>
+        <div class="acc-row"><input id="accCustom" placeholder="Agregar otro accesorio..."><button class="btn btn-outline btn-sm" id="btnAddAcc">+</button></div>
         <div class="selected-chips" id="accSelected"></div>
       </div>
       <div class="card">
@@ -205,512 +177,415 @@
     </div>
   </div>
 
-  <!-- DETAIL VIEW -->
   <div id="viewDetail" class="hidden">
     <div class="container" id="detailContainer"></div>
   </div>
 
-  <!-- TOAST -->
   <div class="toast" id="toast"></div>
-
-  <!-- HIDDEN FILE INPUT -->
   <input type="file" id="fileImport" accept=".xlsx,.xls" style="display:none">
 
   <script>
     // ══════════════════════════════════════════
     // DATA
     // ══════════════════════════════════════════
-    const COMMON_ACC = ["Cargador/Fuente","Cable de corriente","Mouse","Teclado","Maletín/Funda","Cable HDMI","Cable USB","Batería extra"];
-    const STATUS_LABELS = { recibido:"Recibido", en_proceso:"En proceso", terminado:"Terminado", entregado:"Entregado" };
-    let orders = JSON.parse(localStorage.getItem("serviciotec_orders") || "[]");
-    let currentFilter = "all";
-    let selectedAcc = [];
-    let currentOrderId = null;
-    let GOOGLE_SCRIPT_URL = localStorage.getItem("serviciotec_gscript_url") || "";
+    const COMMON_ACC=["Cargador/Fuente","Cable de corriente","Mouse","Teclado","Maletín/Funda","Cable HDMI","Cable USB","Batería extra"];
+    const STATUS_LABELS={recibido:"Recibido",en_proceso:"En proceso",terminado:"Terminado",entregado:"Entregado"};
+    let orders=JSON.parse(localStorage.getItem("serviciotec_orders")||"[]");
+    let currentFilter="all",selectedAcc=[],currentOrderId=null;
+    let GOOGLE_SCRIPT_URL=localStorage.getItem("serviciotec_gscript_url")||"";
 
-    function save() {
-      localStorage.setItem("serviciotec_orders", JSON.stringify(orders));
-    }
-    function genId() {
-      const n=new Date(),y=String(n.getFullYear()).slice(2),m=String(n.getMonth()+1).padStart(2,"0"),d=String(n.getDate()).padStart(2,"0");
-      return `OS-${y}${m}${d}-${Math.floor(Math.random()*900+100)}`;
-    }
-    function fmtDate(iso) {
-      if(!iso) return "";
-      return new Date(iso).toLocaleDateString("es-MX",{day:"2-digit",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"});
-    }
-    function fmtCur(n) { return new Intl.NumberFormat("es-MX",{style:"currency",currency:"MXN"}).format(n); }
-    function badge(status) { return `<span class="badge badge-${status}">${STATUS_LABELS[status]||status}</span>`; }
-
-    function showToast(msg, duration=3000) {
-      const t = document.getElementById("toast");
-      t.textContent = msg; t.classList.add("show");
-      setTimeout(()=>t.classList.remove("show"), duration);
-    }
+    function save(){localStorage.setItem("serviciotec_orders",JSON.stringify(orders));}
+    function genId(){const n=new Date(),y=String(n.getFullYear()).slice(2),m=String(n.getMonth()+1).padStart(2,"0"),d=String(n.getDate()).padStart(2,"0");return`OS-${y}${m}${d}-${Math.floor(Math.random()*900+100)}`;}
+    function fmtDate(iso){if(!iso)return"";return new Date(iso).toLocaleDateString("es-MX",{day:"2-digit",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"});}
+    function fmtCur(n){return new Intl.NumberFormat("es-MX",{style:"currency",currency:"MXN"}).format(n);}
+    function badge(status){return`<span class="badge badge-${status}">${STATUS_LABELS[status]||status}</span>`;}
+    function showToast(msg,duration=3000){const t=document.getElementById("toast");t.textContent=msg;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),duration);}
 
     // ══════════════════════════════════════════
-    // GOOGLE SHEETS SYNC
+    // GOOGLE SHEETS SYNC (FIXED)
     // ══════════════════════════════════════════
-    function updateSyncBadge() {
-      const b = document.getElementById("syncBadge");
-      const t = document.getElementById("syncText");
-      if (GOOGLE_SCRIPT_URL) {
-        b.className = "sync-status connected";
-        t.textContent = "Google Sync";
-        b.title = "Conectado a Google Sheets";
-      } else {
-        b.className = "sync-status disconnected";
-        t.textContent = "Sin sync";
-        b.title = "Google Sheets no configurado";
+    function updateSyncBadge(){
+      const b=document.getElementById("syncBadge"),t=document.getElementById("syncText");
+      if(GOOGLE_SCRIPT_URL){b.className="sync-status connected";t.textContent="Google Sync";}
+      else{b.className="sync-status disconnected";t.textContent="Sin sync";}
+    }
+
+    // Google Apps Script returns 302 redirect. We use fetch + follow redirect.
+    async function googlePost(data) {
+      if (!GOOGLE_SCRIPT_URL) return null;
+      try {
+        const res = await fetch(GOOGLE_SCRIPT_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify(data),
+          redirect: "follow"
+        });
+        const text = await res.text();
+        try { return JSON.parse(text); } catch(e) { return { raw: text }; }
+      } catch(err) {
+        console.error("Google sync error:", err);
+        return { error: err.message };
+      }
+    }
+
+    async function googleGet() {
+      if (!GOOGLE_SCRIPT_URL) return null;
+      try {
+        const res = await fetch(GOOGLE_SCRIPT_URL, { redirect: "follow" });
+        const text = await res.text();
+        try { return JSON.parse(text); } catch(e) { return { raw: text }; }
+      } catch(err) {
+        console.error("Google fetch error:", err);
+        return { error: err.message };
       }
     }
 
     async function syncToGoogle(action, data) {
-      if (!GOOGLE_SCRIPT_URL) return;
-      try {
-        await fetch(GOOGLE_SCRIPT_URL, {
-          method: "POST", mode: "no-cors",
-          headers: { "Content-Type": "text/plain" },
-          body: JSON.stringify({ action, ...data })
-        });
-      } catch(e) { console.warn("Sync error:", e); }
+      const result = await googlePost({ action, ...data });
+      if (result) console.log("Sync result:", result);
+    }
+
+    async function testConnection() {
+      if (!GOOGLE_SCRIPT_URL) { showToast("⚠️ Primero guarda la URL"); return; }
+      const logBox = document.getElementById("logBox");
+      if (logBox) logBox.textContent = "⏳ Probando conexión...\n";
+
+      showToast("⏳ Probando conexión...");
+      const result = await googleGet();
+
+      if (logBox) {
+        logBox.textContent += "Respuesta: " + JSON.stringify(result, null, 2) + "\n";
+      }
+      if (result && result.success) {
+        showToast("✅ ¡Conexión exitosa! " + (result.orders?.length || 0) + " órdenes en la hoja");
+      } else if (result && result.error) {
+        showToast("❌ Error: " + result.error, 5000);
+      } else {
+        showToast("⚠️ Respuesta inesperada. Revisa el log.", 5000);
+      }
     }
 
     async function syncAllToGoogle() {
-      if (!GOOGLE_SCRIPT_URL) { showToast("⚠️ Configura la URL de Google primero"); return; }
-      showToast("⏳ Sincronizando con Google Sheets...");
-      try {
-        await fetch(GOOGLE_SCRIPT_URL, {
-          method: "POST", mode: "no-cors",
-          headers: { "Content-Type": "text/plain" },
-          body: JSON.stringify({ action: "sync", orders })
-        });
-        showToast("✅ Datos enviados a Google Sheets");
-      } catch(e) {
-        showToast("❌ Error de sincronización");
-        console.error(e);
+      if (!GOOGLE_SCRIPT_URL) { showToast("⚠️ Configura la URL primero"); return; }
+      showToast("⏳ Subiendo órdenes...");
+      const result = await googlePost({ action: "sync", orders });
+      if (result && result.success) {
+        showToast("✅ " + (result.count || orders.length) + " órdenes sincronizadas");
+      } else {
+        showToast("❌ Error al sincronizar. Revisa el log.", 5000);
+        console.error("Sync result:", result);
       }
     }
 
     async function pullFromGoogle() {
-      if (!GOOGLE_SCRIPT_URL) { showToast("⚠️ Configura la URL de Google primero"); return; }
+      if (!GOOGLE_SCRIPT_URL) { showToast("⚠️ Configura la URL primero"); return; }
       showToast("⏳ Descargando de Google Sheets...");
-      try {
-        const res = await fetch(GOOGLE_SCRIPT_URL);
-        const data = await res.json();
-        if (data.success && data.orders) {
-          orders = data.orders;
-          save(); renderList();
-          showToast(`✅ ${orders.length} órdenes descargadas`);
-        } else {
-          showToast("❌ Error: " + (data.error || "Respuesta inválida"));
-        }
-      } catch(e) {
-        showToast("❌ Error al descargar");
-        console.error(e);
+      const result = await googleGet();
+      if (result && result.success && result.orders) {
+        orders = result.orders;
+        save(); renderList();
+        showToast("✅ " + orders.length + " órdenes descargadas");
+      } else {
+        showToast("❌ Error al descargar", 5000);
+        console.error("Pull result:", result);
       }
     }
 
     // ══════════════════════════════════════════
-    // EXCEL EXPORT / IMPORT
+    // EXCEL
     // ══════════════════════════════════════════
-    function exportExcel() {
-      if (!orders.length) { showToast("No hay órdenes para exportar"); return; }
-      const rows = orders.map(o => ({
-        "Folio": o.id, "Estado": STATUS_LABELS[o.status]||o.status,
-        "Fecha Creación": fmtDate(o.createdAt), "Fecha Completado": fmtDate(o.completedAt),
-        "Tipo Cliente": o.clientType, "Nombre": o.clientName, "Empresa": o.company||"",
-        "Teléfono": o.phone, "Email": o.email||"",
-        "Tipo Equipo": o.equipmentType, "Marca": o.brand, "Modelo": o.model||"", "No. Serie": o.serial||"",
-        "Accesorios": (o.accessories||[]).join(", "),
-        "Fallas Reportadas": o.reportedIssues, "Observaciones": o.observations||"",
-        "Costo Estimado": o.estimatedCost||"",
-        "Diagnóstico": o.diagnosis||"", "Solución": o.solution||"", "Refacciones": o.partsUsed||"",
-        "Mano de Obra": o.laborCost||0, "Costo Refacciones": o.partsCost||0,
-        "Total": (o.laborCost||0)+(o.partsCost||0), "Garantía": o.warranty||""
+    function exportExcel(){
+      if(!orders.length){showToast("No hay órdenes");return;}
+      const rows=orders.map(o=>({
+        "Folio":o.id,"Estado":STATUS_LABELS[o.status]||o.status,
+        "Fecha Creación":fmtDate(o.createdAt),"Fecha Completado":fmtDate(o.completedAt),
+        "Tipo Cliente":o.clientType,"Nombre":o.clientName,"Empresa":o.company||"",
+        "Teléfono":o.phone,"Email":o.email||"",
+        "Tipo Equipo":o.equipmentType,"Marca":o.brand,"Modelo":o.model||"","No. Serie":o.serial||"",
+        "Accesorios":(o.accessories||[]).join(", "),
+        "Fallas Reportadas":o.reportedIssues,"Observaciones":o.observations||"",
+        "Costo Estimado":o.estimatedCost||"",
+        "Diagnóstico":o.diagnosis||"","Solución":o.solution||"","Refacciones":o.partsUsed||"",
+        "Mano de Obra":o.laborCost||0,"Costo Refacciones":o.partsCost||0,
+        "Total":(o.laborCost||0)+(o.partsCost||0),"Garantía":o.warranty||""
       }));
-      const ws = XLSX.utils.json_to_sheet(rows);
-      // Column widths
-      ws["!cols"] = [
-        {wch:15},{wch:12},{wch:20},{wch:20},{wch:12},{wch:25},{wch:20},
-        {wch:14},{wch:25},{wch:15},{wch:15},{wch:15},{wch:18},
-        {wch:30},{wch:40},{wch:30},{wch:12},
-        {wch:40},{wch:40},{wch:30},{wch:14},{wch:14},{wch:14},{wch:20}
-      ];
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Órdenes");
-      const today = new Date().toISOString().slice(0,10);
-      XLSX.writeFile(wb, `ServicioTec_${today}.xlsx`);
-      showToast(`✅ ${orders.length} órdenes exportadas a Excel`);
+      const ws=XLSX.utils.json_to_sheet(rows);
+      ws["!cols"]=[{wch:15},{wch:12},{wch:20},{wch:20},{wch:12},{wch:25},{wch:20},{wch:14},{wch:25},{wch:15},{wch:15},{wch:15},{wch:18},{wch:30},{wch:40},{wch:30},{wch:12},{wch:40},{wch:40},{wch:30},{wch:14},{wch:14},{wch:14},{wch:20}];
+      const wb=XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb,ws,"Órdenes");
+      XLSX.writeFile(wb,`ServicioTec_${new Date().toISOString().slice(0,10)}.xlsx`);
+      showToast("✅ "+orders.length+" órdenes exportadas");
     }
-
-    function importExcel(file) {
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        try {
-          const data = new Uint8Array(e.target.result);
-          const wb = XLSX.read(data, { type: "array" });
-          const ws = wb.Sheets[wb.SheetNames[0]];
-          const rows = XLSX.utils.sheet_to_json(ws);
-          if (!rows.length) { showToast("❌ El archivo está vacío"); return; }
-
-          const STATUS_REVERSE = {};
-          Object.entries(STATUS_LABELS).forEach(([k,v])=>STATUS_REVERSE[v]=k);
-
-          const imported = rows.map(r => ({
-            id: r["Folio"] || genId(),
-            status: STATUS_REVERSE[r["Estado"]] || "recibido",
-            createdAt: r["Fecha Creación"] ? new Date(r["Fecha Creación"]).toISOString() : new Date().toISOString(),
-            completedAt: r["Fecha Completado"] ? new Date(r["Fecha Completado"]).toISOString() : null,
-            clientType: r["Tipo Cliente"] || "Particular",
-            clientName: r["Nombre"] || "Sin nombre",
-            company: r["Empresa"] || "",
-            phone: String(r["Teléfono"] || ""),
-            email: r["Email"] || "",
-            equipmentType: r["Tipo Equipo"] || "Otro",
-            brand: r["Marca"] || "",
-            model: r["Modelo"] || "",
-            serial: r["No. Serie"] || "",
-            accessories: r["Accesorios"] ? r["Accesorios"].split(", ").filter(a=>a) : [],
-            reportedIssues: r["Fallas Reportadas"] || "",
-            observations: r["Observaciones"] || "",
-            estimatedCost: parseFloat(r["Costo Estimado"]) || null,
-            diagnosis: r["Diagnóstico"] || "",
-            solution: r["Solución"] || "",
-            partsUsed: r["Refacciones"] || "",
-            laborCost: parseFloat(r["Mano de Obra"]) || 0,
-            partsCost: parseFloat(r["Costo Refacciones"]) || 0,
-            warranty: r["Garantía"] || ""
+    function importExcel(file){
+      const reader=new FileReader();
+      reader.onload=function(e){
+        try{
+          const data=new Uint8Array(e.target.result);
+          const wb=XLSX.read(data,{type:"array"});
+          const rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+          if(!rows.length){showToast("❌ Archivo vacío");return;}
+          const SR={};Object.entries(STATUS_LABELS).forEach(([k,v])=>SR[v]=k);
+          const imported=rows.map(r=>({
+            id:r["Folio"]||genId(),status:SR[r["Estado"]]||"recibido",
+            createdAt:r["Fecha Creación"]?new Date(r["Fecha Creación"]).toISOString():new Date().toISOString(),
+            completedAt:r["Fecha Completado"]?new Date(r["Fecha Completado"]).toISOString():null,
+            clientType:r["Tipo Cliente"]||"Particular",clientName:r["Nombre"]||"Sin nombre",
+            company:r["Empresa"]||"",phone:String(r["Teléfono"]||""),email:r["Email"]||"",
+            equipmentType:r["Tipo Equipo"]||"Otro",brand:r["Marca"]||"",model:r["Modelo"]||"",serial:r["No. Serie"]||"",
+            accessories:r["Accesorios"]?r["Accesorios"].split(", ").filter(a=>a):[],
+            reportedIssues:r["Fallas Reportadas"]||"",observations:r["Observaciones"]||"",
+            estimatedCost:parseFloat(r["Costo Estimado"])||null,
+            diagnosis:r["Diagnóstico"]||"",solution:r["Solución"]||"",partsUsed:r["Refacciones"]||"",
+            laborCost:parseFloat(r["Mano de Obra"])||0,partsCost:parseFloat(r["Costo Refacciones"])||0,
+            warranty:r["Garantía"]||""
           }));
-
-          // Merge: update existing by ID, add new ones
-          const existingIds = new Set(orders.map(o=>o.id));
-          let added = 0, updated = 0;
-          imported.forEach(imp => {
-            const idx = orders.findIndex(o=>o.id===imp.id);
-            if (idx >= 0) { orders[idx] = imp; updated++; }
-            else { orders.push(imp); added++; }
-          });
-          save(); renderList();
-          showToast(`✅ Importado: ${added} nuevas, ${updated} actualizadas`);
-        } catch(err) {
-          showToast("❌ Error al leer el archivo");
-          console.error(err);
-        }
+          let added=0,updated=0;
+          imported.forEach(imp=>{const idx=orders.findIndex(o=>o.id===imp.id);if(idx>=0){orders[idx]=imp;updated++;}else{orders.push(imp);added++;}});
+          save();renderList();
+          showToast("✅ "+added+" nuevas, "+updated+" actualizadas");
+        }catch(err){showToast("❌ Error al leer");console.error(err);}
       };
       reader.readAsArrayBuffer(file);
     }
 
     // ══════════════════════════════════════════
-    // SETTINGS MODAL
+    // SETTINGS
     // ══════════════════════════════════════════
-    function showSettings() {
-      const overlay = document.createElement("div");
-      overlay.className = "modal-overlay";
-      overlay.innerHTML = `
+    function showSettings(){
+      const overlay=document.createElement("div");
+      overlay.className="modal-overlay";
+      overlay.innerHTML=`
         <div class="modal">
           <h3>⚙️ Configuración</h3>
-
           <div class="card" style="margin-bottom:16px">
             <div class="section-label" style="color:#217346">📊 Excel</div>
             <div class="actions" style="gap:8px">
-              <button class="btn btn-excel" onclick="exportExcel();this.closest('.modal-overlay').remove()">📥 Exportar órdenes a Excel</button>
+              <button class="btn btn-excel" onclick="exportExcel();this.closest('.modal-overlay').remove()">📥 Exportar a Excel</button>
               <button class="btn btn-outline" onclick="document.getElementById('fileImport').click()">📤 Importar desde Excel</button>
             </div>
           </div>
-
           <div class="card" style="margin-bottom:16px">
             <div class="section-label" style="color:#4285F4">☁️ Google Sheets</div>
             <div class="field">
-              <label>URL del Google Apps Script</label>
-              <input id="settingsGoogleUrl" placeholder="https://script.google.com/macros/s/..." value="${GOOGLE_SCRIPT_URL}">
+              <label>URL del Google Apps Script (termina en /exec)</label>
+              <input id="settingsGoogleUrl" placeholder="https://script.google.com/macros/s/.../exec" value="${GOOGLE_SCRIPT_URL}">
             </div>
             <div class="actions" style="gap:8px">
               <button class="btn btn-google" onclick="saveGoogleUrl()">💾 Guardar URL</button>
+              <button class="btn btn-test" onclick="testConnection()">🔌 Probar conexión</button>
               <div class="actions-row">
                 <button class="btn btn-outline" onclick="syncAllToGoogle()">⬆️ Subir todo</button>
                 <button class="btn btn-outline" onclick="pullFromGoogle()">⬇️ Descargar</button>
               </div>
             </div>
+            <div class="log-box" id="logBox">Presiona "Probar conexión" para verificar...</div>
             <p style="font-size:11px;color:var(--muted);margin-top:10px;line-height:1.5">
-              Consulta el archivo <strong>ServicioTec_GoogleAppsScript.js</strong> para las instrucciones de configuración.
-              Los datos se sincronizan automáticamente al crear, actualizar o eliminar órdenes.
+              La URL correcta termina en <strong>/exec</strong><br>
+              Ejemplo: https://script.google.com/macros/s/AKfycb.../exec
             </p>
           </div>
-
           <div class="card" style="margin-bottom:16px">
             <div class="section-label" style="color:var(--danger)">🗑️ Datos</div>
-            <button class="btn btn-danger" onclick="if(confirm('¿Borrar TODAS las órdenes? Esta acción no se puede deshacer.')){orders=[];save();renderList();this.closest('.modal-overlay').remove();showToast('Órdenes eliminadas');}">Borrar todas las órdenes</button>
+            <button class="btn btn-danger" onclick="if(confirm('¿Borrar TODAS las órdenes?')){orders=[];save();renderList();this.closest('.modal-overlay').remove();showToast('Órdenes eliminadas');}">Borrar todas las órdenes</button>
           </div>
-
           <button class="btn btn-outline" onclick="this.closest('.modal-overlay').remove()">Cerrar</button>
-        </div>
-      `;
+        </div>`;
       document.body.appendChild(overlay);
-      overlay.addEventListener("click", e => { if (e.target === overlay) overlay.remove(); });
+      overlay.addEventListener("click",e=>{if(e.target===overlay)overlay.remove();});
     }
-
-    function saveGoogleUrl() {
-      const url = document.getElementById("settingsGoogleUrl").value.trim();
-      GOOGLE_SCRIPT_URL = url;
-      localStorage.setItem("serviciotec_gscript_url", url);
+    function saveGoogleUrl(){
+      const url=document.getElementById("settingsGoogleUrl").value.trim();
+      if(url && !url.endsWith("/exec")){showToast("⚠️ La URL debe terminar en /exec",4000);return;}
+      GOOGLE_SCRIPT_URL=url;
+      localStorage.setItem("serviciotec_gscript_url",url);
       updateSyncBadge();
-      showToast(url ? "✅ URL de Google guardada" : "⚠️ URL eliminada");
+      showToast(url?"✅ URL guardada":"⚠️ URL eliminada");
     }
 
     // ══════════════════════════════════════════
     // VIEWS
     // ══════════════════════════════════════════
-    function showView(name) {
-      document.getElementById("viewList").classList.toggle("hidden", name!=="list");
-      document.getElementById("viewNew").classList.toggle("hidden", name!=="new");
-      document.getElementById("viewDetail").classList.toggle("hidden", name!=="detail");
-      document.getElementById("headerSub").textContent = name==="new"?"Nueva orden":name==="detail"?(currentOrderId||""):"Órdenes de servicio";
+    function showView(name){
+      document.getElementById("viewList").classList.toggle("hidden",name!=="list");
+      document.getElementById("viewNew").classList.toggle("hidden",name!=="new");
+      document.getElementById("viewDetail").classList.toggle("hidden",name!=="detail");
+      document.getElementById("headerSub").textContent=name==="new"?"Nueva orden":name==="detail"?(currentOrderId||""):"Órdenes de servicio";
     }
 
-    // ══════════════════════════════════════════
-    // RENDER LIST
-    // ══════════════════════════════════════════
-    function renderList() {
-      const search = document.getElementById("searchInput").value.toLowerCase();
-      const counts = { all:orders.length, recibido:0, en_proceso:0, terminado:0, entregado:0 };
-      orders.forEach(o => counts[o.status]++);
-      document.getElementById("headerCount").textContent = `${orders.length} orden${orders.length!==1?"es":""}`;
-
-      const tabs = [["all",`Todas (${counts.all})`],["recibido",`Recibido (${counts.recibido})`],["en_proceso",`Proceso (${counts.en_proceso})`],["terminado",`Listo (${counts.terminado})`]];
-      document.getElementById("tabBar").innerHTML = tabs.map(([k,l])=>`<button class="${currentFilter===k?"active":""}" onclick="currentFilter='${k}';renderList()">${l}</button>`).join("");
-
-      let filtered = orders.filter(o => currentFilter==="all" || o.status===currentFilter);
-      if (search) filtered = filtered.filter(o => o.clientName.toLowerCase().includes(search)||o.id.toLowerCase().includes(search)||o.brand.toLowerCase().includes(search)||(o.company||"").toLowerCase().includes(search));
-      filtered.sort((a,b) => new Date(b.createdAt)-new Date(a.createdAt));
-
-      const container = document.getElementById("orderListContainer");
-      if (!filtered.length) {
-        container.innerHTML = `<div class="empty"><div class="icon">📋</div><div style="font-weight:600;margin-bottom:4px">Sin órdenes</div><div style="font-size:13px">Presiona + para crear una nueva orden</div></div>`;
-        return;
-      }
-      container.innerHTML = filtered.map(o => {
-        const total = (o.laborCost||0)+(o.partsCost||0);
-        return `<div class="order-card" onclick="openDetail('${o.id}')">
-          <div><div class="name">${o.clientName}</div><div class="meta">${o.id} · ${o.equipmentType} ${o.brand}</div><div class="date">${fmtDate(o.createdAt)}</div></div>
-          <div class="right">${badge(o.status)}${(o.status==="terminado"||o.status==="entregado")?`<div class="total">${fmtCur(total)}</div>`:""}</div>
-        </div>`;
+    function renderList(){
+      const search=document.getElementById("searchInput").value.toLowerCase();
+      const counts={all:orders.length,recibido:0,en_proceso:0,terminado:0,entregado:0};
+      orders.forEach(o=>counts[o.status]++);
+      const tabs=[["all","Todas ("+counts.all+")"],["recibido","Recibido ("+counts.recibido+")"],["en_proceso","Proceso ("+counts.en_proceso+")"],["terminado","Listo ("+counts.terminado+")"]];
+      document.getElementById("tabBar").innerHTML=tabs.map(([k,l])=>'<button class="'+(currentFilter===k?"active":"")+'" onclick="currentFilter=\''+k+'\';renderList()">'+l+'</button>').join("");
+      let filtered=orders.filter(o=>currentFilter==="all"||o.status===currentFilter);
+      if(search)filtered=filtered.filter(o=>o.clientName.toLowerCase().includes(search)||o.id.toLowerCase().includes(search)||o.brand.toLowerCase().includes(search)||(o.company||"").toLowerCase().includes(search));
+      filtered.sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
+      const container=document.getElementById("orderListContainer");
+      if(!filtered.length){container.innerHTML='<div class="empty"><div class="icon">📋</div><div style="font-weight:600;margin-bottom:4px">Sin órdenes</div><div style="font-size:13px">Presiona + para crear una nueva orden</div></div>';return;}
+      container.innerHTML=filtered.map(o=>{
+        const total=(o.laborCost||0)+(o.partsCost||0);
+        return'<div class="order-card" onclick="openDetail(\''+o.id+'\')"><div><div class="name">'+o.clientName+'</div><div class="meta">'+o.id+' · '+o.equipmentType+' '+o.brand+'</div><div class="date">'+fmtDate(o.createdAt)+'</div></div><div class="right">'+badge(o.status)+((o.status==="terminado"||o.status==="entregado")?'<div class="total">'+fmtCur(total)+'</div>':"")+'</div></div>';
       }).join("");
     }
 
     // ══════════════════════════════════════════
     // NEW ORDER
     // ══════════════════════════════════════════
-    function initNewForm() {
-      selectedAcc = [];
-      showView("new");
+    function initNewForm(){
+      selectedAcc=[];showView("new");
       ["fClientName","fCompany","fPhone","fEmail","fBrand","fModel","fSerial","fIssues","fObservations","fEstCost"].forEach(id=>document.getElementById(id).value="");
-      document.getElementById("fClientType").value = "Particular";
-      document.getElementById("fEquipType").value = "Laptop";
+      document.getElementById("fClientType").value="Particular";
+      document.getElementById("fEquipType").value="Laptop";
       document.getElementById("fCompanyWrap").classList.add("hidden");
       renderAccChips();
     }
+    function renderAccChips(){
+      document.getElementById("accChips").innerHTML=COMMON_ACC.map(a=>'<span class="chip '+(selectedAcc.includes(a)?'selected':'')+'" onclick="toggleAcc(\''+a+'\')">'+(selectedAcc.includes(a)?'✓ ':'+ ')+a+'</span>').join("");
+      document.getElementById("accSelected").innerHTML=selectedAcc.map((a,i)=>'<span class="chip">'+a+' <button class="chip-remove" onclick="removeAcc('+i+')">×</button></span>').join("");
+    }
+    function toggleAcc(name){if(selectedAcc.includes(name))selectedAcc=selectedAcc.filter(a=>a!==name);else selectedAcc.push(name);renderAccChips();}
+    function removeAcc(i){selectedAcc.splice(i,1);renderAccChips();}
+    function addCustomAcc(){const inp=document.getElementById("accCustom");const v=inp.value.trim();if(v&&!selectedAcc.includes(v)){selectedAcc.push(v);renderAccChips();}inp.value="";}
 
-    function renderAccChips() {
-      document.getElementById("accChips").innerHTML = COMMON_ACC.map(a =>
-        `<span class="chip ${selectedAcc.includes(a)?'selected':''}" onclick="toggleAcc('${a}')">${selectedAcc.includes(a)?'✓ ':'+ '}${a}</span>`
-      ).join("");
-      document.getElementById("accSelected").innerHTML = selectedAcc.map((a,i) =>
-        `<span class="chip">${a} <button class="chip-remove" onclick="removeAcc(${i})">×</button></span>`
-      ).join("");
-    }
-    function toggleAcc(name) {
-      if(selectedAcc.includes(name)) selectedAcc=selectedAcc.filter(a=>a!==name);
-      else selectedAcc.push(name);
-      renderAccChips();
-    }
-    function removeAcc(i) { selectedAcc.splice(i,1); renderAccChips(); }
-    function addCustomAcc() {
-      const inp=document.getElementById("accCustom"); const v=inp.value.trim();
-      if(v&&!selectedAcc.includes(v)){selectedAcc.push(v);renderAccChips();}
-      inp.value="";
-    }
-
-    function saveNewOrder() {
-      const name=document.getElementById("fClientName").value.trim();
-      const phone=document.getElementById("fPhone").value.trim();
-      const brand=document.getElementById("fBrand").value.trim();
-      const issues=document.getElementById("fIssues").value.trim();
+    function saveNewOrder(){
+      const name=document.getElementById("fClientName").value.trim(),phone=document.getElementById("fPhone").value.trim(),brand=document.getElementById("fBrand").value.trim(),issues=document.getElementById("fIssues").value.trim();
       if(!name||!phone||!brand||!issues){alert("Complete los campos obligatorios (*)");return;}
-
-      const order = {
-        id:genId(), status:"recibido", createdAt:new Date().toISOString(), completedAt:null,
-        clientType:document.getElementById("fClientType").value,
-        clientName:name, company:document.getElementById("fCompany").value.trim(),
-        phone, email:document.getElementById("fEmail").value.trim(),
-        equipmentType:document.getElementById("fEquipType").value,
-        brand, model:document.getElementById("fModel").value.trim(),
-        serial:document.getElementById("fSerial").value.trim(),
-        accessories:[...selectedAcc], reportedIssues:issues,
+      const order={
+        id:genId(),status:"recibido",createdAt:new Date().toISOString(),completedAt:null,
+        clientType:document.getElementById("fClientType").value,clientName:name,
+        company:document.getElementById("fCompany").value.trim(),phone,email:document.getElementById("fEmail").value.trim(),
+        equipmentType:document.getElementById("fEquipType").value,brand,model:document.getElementById("fModel").value.trim(),
+        serial:document.getElementById("fSerial").value.trim(),accessories:[...selectedAcc],reportedIssues:issues,
         observations:document.getElementById("fObservations").value.trim(),
         estimatedCost:parseFloat(document.getElementById("fEstCost").value)||null,
         diagnosis:"",solution:"",partsUsed:"",laborCost:0,partsCost:0,warranty:""
       };
-      orders.unshift(order); save();
-      syncToGoogle("create", { order });
-      currentOrderId=order.id;
-      openDetail(order.id);
-      showToast("✅ Orden creada: " + order.id);
+      orders.unshift(order);save();
+      syncToGoogle("create",{order});
+      currentOrderId=order.id;openDetail(order.id);
+      showToast("✅ Orden creada: "+order.id);
     }
 
     // ══════════════════════════════════════════
     // DETAIL
     // ══════════════════════════════════════════
-    function openDetail(id) {
-      const o=orders.find(x=>x.id===id);
-      if(!o)return;
-      currentOrderId=o.id;
-      showView("detail");
+    function openDetail(id){
+      const o=orders.find(x=>x.id===id);if(!o)return;
+      currentOrderId=o.id;showView("detail");
       const total=(o.laborCost||0)+(o.partsCost||0);
-      const accHtml=o.accessories?.length?o.accessories.map(a=>`<span class="chip">${a}</span>`).join(""):'<span style="color:var(--muted)">Ninguno</span>';
+      const accHtml=o.accessories?.length?o.accessories.map(a=>'<span class="chip">'+a+'</span>').join(""):'<span style="color:var(--muted)">Ninguno</span>';
       const isComplete=o.status==="terminado"||o.status==="entregado";
-
-      let html=`
-        <div class="header-flex"><button class="btn-ghost" onclick="showView('list');renderList()">← Volver</button>${badge(o.status)}</div>
-        <div class="card card-accent"><div style="font-size:20px;font-weight:800;letter-spacing:-0.02em">${o.id}</div><div style="color:var(--muted);font-size:13px;margin-top:4px">${fmtDate(o.createdAt)}</div></div>
-        <div class="card"><div class="section-label">Cliente</div>
-          <div class="detail-row"><span class="detail-label">Nombre</span><span class="detail-value">${o.clientName}</span></div>
-          <div class="detail-row"><span class="detail-label">Tipo</span><span class="detail-value">${o.clientType}</span></div>
-          ${o.company?`<div class="detail-row"><span class="detail-label">Empresa</span><span class="detail-value">${o.company}</span></div>`:""}
-          <div class="detail-row"><span class="detail-label">Teléfono</span><span class="detail-value">${o.phone}</span></div>
-          ${o.email?`<div class="detail-row"><span class="detail-label">Email</span><span class="detail-value">${o.email}</span></div>`:""}
-        </div>
-        <div class="card"><div class="section-label">Equipo</div>
-          <div class="detail-row"><span class="detail-label">Tipo</span><span class="detail-value">${o.equipmentType}</span></div>
-          <div class="detail-row"><span class="detail-label">Marca / Modelo</span><span class="detail-value">${o.brand} ${o.model}</span></div>
-          ${o.serial?`<div class="detail-row"><span class="detail-label">No. Serie</span><span class="detail-value">${o.serial}</span></div>`:""}
-          <div style="padding:8px 0"><span class="detail-label">Accesorios</span><div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:4px">${accHtml}</div></div>
-        </div>
-        <div class="card"><div class="section-label">Fallas reportadas</div>
-          <p style="line-height:1.6">${o.reportedIssues}</p>
-          ${o.observations?`<hr class="divider"><div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:4px">Observaciones</div><p style="line-height:1.6;color:var(--muted)">${o.observations}</p>`:""}
-        </div>`;
-
-      if(isComplete) {
-        html+=`<div class="card card-success"><div class="section-label green">Solución</div>
-          ${o.diagnosis?`<div class="detail-label">Diagnóstico</div><p style="margin:4px 0 12px;line-height:1.5">${o.diagnosis}</p>`:""}
-          <div class="detail-label">Solución aplicada</div><p style="margin:4px 0 12px;line-height:1.5">${o.solution}</p>
-          ${o.partsUsed?`<div class="detail-label">Refacciones</div><p style="margin:4px 0 12px">${o.partsUsed}</p>`:""}
-          <hr class="divider">
-          <div class="detail-row"><span class="detail-label">Mano de obra</span><span class="detail-value">${fmtCur(o.laborCost||0)}</span></div>
-          ${o.partsCost>0?`<div class="detail-row"><span class="detail-label">Refacciones</span><span class="detail-value">${fmtCur(o.partsCost)}</span></div>`:""}
-          <div class="detail-row total-row"><span class="detail-label">Total</span><span class="detail-value">${fmtCur(total)}</span></div>
-          ${o.warranty?`<div class="detail-row"><span class="detail-label">Garantía</span><span class="detail-value">${o.warranty}</span></div>`:""}
-          <div style="margin-top:4px;font-size:12px;color:var(--muted)">Completado: ${fmtDate(o.completedAt)}</div>
-        </div>`;
+      let html='<div class="header-flex"><button class="btn-ghost" onclick="showView(\'list\');renderList()">← Volver</button>'+badge(o.status)+'</div>';
+      html+='<div class="card card-accent"><div style="font-size:20px;font-weight:800">'+o.id+'</div><div style="color:var(--muted);font-size:13px;margin-top:4px">'+fmtDate(o.createdAt)+'</div></div>';
+      html+='<div class="card"><div class="section-label">Cliente</div>';
+      html+='<div class="detail-row"><span class="detail-label">Nombre</span><span class="detail-value">'+o.clientName+'</span></div>';
+      html+='<div class="detail-row"><span class="detail-label">Tipo</span><span class="detail-value">'+o.clientType+'</span></div>';
+      if(o.company)html+='<div class="detail-row"><span class="detail-label">Empresa</span><span class="detail-value">'+o.company+'</span></div>';
+      html+='<div class="detail-row"><span class="detail-label">Teléfono</span><span class="detail-value">'+o.phone+'</span></div>';
+      if(o.email)html+='<div class="detail-row"><span class="detail-label">Email</span><span class="detail-value">'+o.email+'</span></div>';
+      html+='</div>';
+      html+='<div class="card"><div class="section-label">Equipo</div>';
+      html+='<div class="detail-row"><span class="detail-label">Tipo</span><span class="detail-value">'+o.equipmentType+'</span></div>';
+      html+='<div class="detail-row"><span class="detail-label">Marca / Modelo</span><span class="detail-value">'+o.brand+' '+o.model+'</span></div>';
+      if(o.serial)html+='<div class="detail-row"><span class="detail-label">No. Serie</span><span class="detail-value">'+o.serial+'</span></div>';
+      html+='<div style="padding:8px 0"><span class="detail-label">Accesorios</span><div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:4px">'+accHtml+'</div></div></div>';
+      html+='<div class="card"><div class="section-label">Fallas reportadas</div><p style="line-height:1.6">'+o.reportedIssues+'</p>';
+      if(o.observations)html+='<hr class="divider"><div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:4px">Observaciones</div><p style="line-height:1.6;color:var(--muted)">'+o.observations+'</p>';
+      html+='</div>';
+      if(isComplete){
+        html+='<div class="card card-success"><div class="section-label green">Solución</div>';
+        if(o.diagnosis)html+='<div class="detail-label">Diagnóstico</div><p style="margin:4px 0 12px;line-height:1.5">'+o.diagnosis+'</p>';
+        html+='<div class="detail-label">Solución aplicada</div><p style="margin:4px 0 12px;line-height:1.5">'+o.solution+'</p>';
+        if(o.partsUsed)html+='<div class="detail-label">Refacciones</div><p style="margin:4px 0 12px">'+o.partsUsed+'</p>';
+        html+='<hr class="divider"><div class="detail-row"><span class="detail-label">Mano de obra</span><span class="detail-value">'+fmtCur(o.laborCost||0)+'</span></div>';
+        if(o.partsCost>0)html+='<div class="detail-row"><span class="detail-label">Refacciones</span><span class="detail-value">'+fmtCur(o.partsCost)+'</span></div>';
+        html+='<div class="detail-row total-row"><span class="detail-label">Total</span><span class="detail-value">'+fmtCur(total)+'</span></div>';
+        if(o.warranty)html+='<div class="detail-row"><span class="detail-label">Garantía</span><span class="detail-value">'+o.warranty+'</span></div>';
+        html+='<div style="margin-top:4px;font-size:12px;color:var(--muted)">Completado: '+fmtDate(o.completedAt)+'</div></div>';
       }
-
-      html+=`<div class="card actions">`;
-      if(o.status==="recibido"||o.status==="en_proceso") html+=`<button class="btn btn-whatsapp" onclick="sendWA('reception','${o.id}')">📱 Enviar recepción por WhatsApp</button>`;
-      if(o.status==="recibido") html+=`<button class="btn btn-primary" onclick="changeStatus('${o.id}','en_proceso')">Marcar "En proceso"</button>`;
-      if(o.status==="recibido"||o.status==="en_proceso") html+=`<button class="btn btn-success" onclick="showCloseForm('${o.id}')">Cerrar orden (registrar solución)</button>`;
-      if(o.status==="terminado") {
-        html+=`<button class="btn btn-whatsapp" onclick="sendWA('completion','${o.id}')">📱 Enviar reporte final por WhatsApp</button>`;
-        html+=`<button class="btn btn-primary" onclick="changeStatus('${o.id}','entregado')">Marcar como entregado</button>`;
+      html+='<div class="card actions">';
+      if(o.status==="recibido"||o.status==="en_proceso")html+='<button class="btn btn-whatsapp" onclick="sendWA(\'reception\',\''+o.id+'\')">📱 Enviar recepción por WhatsApp</button>';
+      if(o.status==="recibido")html+='<button class="btn btn-primary" onclick="changeStatus(\''+o.id+'\',\'en_proceso\')">Marcar "En proceso"</button>';
+      if(o.status==="recibido"||o.status==="en_proceso")html+='<button class="btn btn-success" onclick="showCloseForm(\''+o.id+'\')">Cerrar orden (registrar solución)</button>';
+      if(o.status==="terminado"){
+        html+='<button class="btn btn-whatsapp" onclick="sendWA(\'completion\',\''+o.id+'\')">📱 Enviar reporte final por WhatsApp</button>';
+        html+='<button class="btn btn-primary" onclick="changeStatus(\''+o.id+'\',\'entregado\')">Marcar como entregado</button>';
       }
-      html+=`<button class="btn btn-danger" onclick="deleteOrder('${o.id}')">Eliminar orden</button></div>`;
-      html+=`<div id="closeFormWrap"></div>`;
+      html+='<button class="btn btn-danger" onclick="deleteOrder(\''+o.id+'\')">Eliminar orden</button></div>';
+      html+='<div id="closeFormWrap"></div>';
       document.getElementById("detailContainer").innerHTML=html;
     }
 
-    function showCloseForm(id) {
+    function showCloseForm(id){
       const o=orders.find(x=>x.id===id);
       document.getElementById("closeFormWrap").innerHTML=`
-        <div class="card card-close">
-          <div class="section-label green">Cerrar orden</div>
-          <div class="field"><label>Diagnóstico</label><textarea id="cDiag" placeholder="¿Qué encontró? Causa raíz...">${o.diagnosis||""}</textarea></div>
-          <div class="field"><label>Solución aplicada *</label><textarea id="cSol" placeholder="¿Qué se hizo para resolver?">${o.solution||""}</textarea></div>
+        <div class="card card-close"><div class="section-label green">Cerrar orden</div>
+          <div class="field"><label>Diagnóstico</label><textarea id="cDiag" placeholder="Causa raíz...">${o.diagnosis||""}</textarea></div>
+          <div class="field"><label>Solución aplicada *</label><textarea id="cSol" placeholder="¿Qué se hizo?">${o.solution||""}</textarea></div>
           <div class="field"><label>Refacciones utilizadas</label><textarea id="cParts" style="min-height:50px" placeholder="Lista de refacciones">${o.partsUsed||""}</textarea></div>
           <div class="row"><div class="field"><label>Mano de obra ($)</label><input id="cLabor" type="number" placeholder="0.00" value="${o.laborCost||""}"></div>
           <div class="field"><label>Refacciones ($)</label><input id="cPartsCost" type="number" placeholder="0.00" value="${o.partsCost||""}"></div></div>
-          <div class="field"><label>Garantía</label><input id="cWarranty" placeholder="Ej: 30 días en mano de obra" value="${o.warranty||""}"></div>
-          <div class="actions-row">
-            <button class="btn btn-outline" onclick="openDetail('${id}')">Cancelar</button>
-            <button class="btn btn-success" onclick="closeOrder('${id}')">Cerrar orden</button>
-          </div>
+          <div class="field"><label>Garantía</label><input id="cWarranty" placeholder="Ej: 30 días" value="${o.warranty||""}"></div>
+          <div class="actions-row"><button class="btn btn-outline" onclick="openDetail('${id}')">Cancelar</button>
+          <button class="btn btn-success" onclick="closeOrder('${id}')">Cerrar orden</button></div>
         </div>`;
     }
 
-    function closeOrder(id) {
+    function closeOrder(id){
       const sol=document.getElementById("cSol").value.trim();
-      if(!sol){alert("La solución aplicada es obligatoria");return;}
+      if(!sol){alert("La solución es obligatoria");return;}
       const o=orders.find(x=>x.id===id);
-      o.diagnosis=document.getElementById("cDiag").value.trim();
-      o.solution=sol;
+      o.diagnosis=document.getElementById("cDiag").value.trim();o.solution=sol;
       o.partsUsed=document.getElementById("cParts").value.trim();
       o.laborCost=parseFloat(document.getElementById("cLabor").value)||0;
       o.partsCost=parseFloat(document.getElementById("cPartsCost").value)||0;
       o.warranty=document.getElementById("cWarranty").value.trim();
-      o.status="terminado";
-      o.completedAt=new Date().toISOString();
-      save();
-      syncToGoogle("update", { order: o });
-      openDetail(id);
-      showToast("✅ Orden cerrada");
+      o.status="terminado";o.completedAt=new Date().toISOString();
+      save();syncToGoogle("update",{order:o});openDetail(id);showToast("✅ Orden cerrada");
     }
 
-    function changeStatus(id,status) {
-      const o=orders.find(x=>x.id===id);
-      o.status=status;
-      if(status==="entregado"&&!o.completedAt) o.completedAt=new Date().toISOString();
-      save();
-      syncToGoogle("update", { order: o });
-      openDetail(id);
-      showToast("✅ Estado actualizado: "+STATUS_LABELS[status]);
+    function changeStatus(id,status){
+      const o=orders.find(x=>x.id===id);o.status=status;
+      if(status==="entregado"&&!o.completedAt)o.completedAt=new Date().toISOString();
+      save();syncToGoogle("update",{order:o});openDetail(id);showToast("✅ "+STATUS_LABELS[status]);
     }
 
-    function deleteOrder(id) {
-      if(!confirm("¿Eliminar esta orden permanentemente?"))return;
-      orders=orders.filter(o=>o.id!==id);
-      save();
-      syncToGoogle("delete", { id });
-      showView("list"); renderList();
-      showToast("Orden eliminada");
+    function deleteOrder(id){
+      if(!confirm("¿Eliminar esta orden?"))return;
+      orders=orders.filter(o=>o.id!==id);save();syncToGoogle("delete",{id});
+      showView("list");renderList();showToast("Orden eliminada");
     }
 
     // ══════════════════════════════════════════
     // WHATSAPP
     // ══════════════════════════════════════════
-    function sendWA(type,id) {
-      const o=orders.find(x=>x.id===id);
-      const phone=o.phone.replace(/\D/g,"");
-      const num=phone.startsWith("52")?phone:"52"+phone;
+    function sendWA(type,id){
+      const o=orders.find(x=>x.id===id);const phone=o.phone.replace(/\D/g,"");const num=phone.startsWith("52")?phone:"52"+phone;
       let msg="";
-      if(type==="reception") {
+      if(type==="reception"){
         const acc=o.accessories?.length?o.accessories.join(", "):"Ninguno";
-        msg=`*ORDEN DE SERVICIO: ${o.id}*\n━━━━━━━━━━━━━━━━━━━━━\n\n *Cliente:* ${o.clientName}\n${o.clientType==="Empresa"?` *Empresa:* ${o.company}\n`:""} *Teléfono:* ${o.phone}\n${o.email?` *Email:* ${o.email}\n`:""}\n *Equipo:* ${o.equipmentType}\n *Marca/Modelo:* ${o.brand} ${o.model}\n *No. Serie:* ${o.serial||"N/A"}\n\n *Accesorios entregados:*\n${acc}\n\n *Fallas reportadas:*\n${o.reportedIssues}\n${o.observations?`\n *Observaciones:*\n${o.observations}\n`:""}\n *Fecha de recepción:* ${fmtDate(o.createdAt)}\n\n_Conserve este mensaje como comprobante de recepción._`;
-      } else {
+        msg="🔧 *ORDEN DE SERVICIO: "+o.id+"*\n━━━━━━━━━━━━━━━━━━━━━\n\n👤 *Cliente:* "+o.clientName+"\n"+(o.clientType==="Empresa"?"🏢 *Empresa:* "+o.company+"\n":"")+"📱 *Teléfono:* "+o.phone+"\n"+(o.email?"📧 *Email:* "+o.email+"\n":"")+"\n🖥️ *Equipo:* "+o.equipmentType+"\n📋 *Marca/Modelo:* "+o.brand+" "+o.model+"\n🔢 *No. Serie:* "+(o.serial||"N/A")+"\n\n📦 *Accesorios entregados:*\n"+acc+"\n\n⚠️ *Fallas reportadas:*\n"+o.reportedIssues+"\n"+(o.observations?"\n📝 *Observaciones:*\n"+o.observations+"\n":"")+"\n📅 *Fecha de recepción:* "+fmtDate(o.createdAt)+"\n\n_Conserve este mensaje como comprobante._";
+      }else{
         const total=(o.laborCost||0)+(o.partsCost||0);
-        msg=` *ORDEN COMPLETADA: ${o.id}*\n━━━━━━━━━━━━━━━━━━━━━\n\n *Cliente:* ${o.clientName}\n *Equipo:* ${o.equipmentType} - ${o.brand} ${o.model}\n\n *Diagnóstico:*\n${o.diagnosis||"N/A"}\n\n *Solución aplicada:*\n${o.solution}\n${o.partsUsed?`\n *Refacciones:*\n${o.partsUsed}\n`:""}\n *Mano de obra:* ${fmtCur(o.laborCost||0)}\n${o.partsCost?` *Refacciones:* ${fmtCur(o.partsCost)}\n`:""} *TOTAL:* ${fmtCur(total)}\n\n *Recibido:* ${fmtDate(o.createdAt)}\n *Completado:* ${fmtDate(o.completedAt)}\n${o.warranty?`\n*Garantía:* ${o.warranty}\n`:""}\n_Su equipo está listo para ser recogido. ¡Gracias por su confianza!_`;
+        msg="✅ *ORDEN COMPLETADA: "+o.id+"*\n━━━━━━━━━━━━━━━━━━━━━\n\n👤 *Cliente:* "+o.clientName+"\n🖥️ *Equipo:* "+o.equipmentType+" - "+o.brand+" "+o.model+"\n\n🔧 *Diagnóstico:*\n"+(o.diagnosis||"N/A")+"\n\n🛠️ *Solución aplicada:*\n"+o.solution+"\n"+(o.partsUsed?"\n🔩 *Refacciones:*\n"+o.partsUsed+"\n":"")+"\n💰 *Mano de obra:* "+fmtCur(o.laborCost||0)+"\n"+(o.partsCost?"💰 *Refacciones:* "+fmtCur(o.partsCost)+"\n":"")+"💰 *TOTAL:* "+fmtCur(total)+"\n\n📅 *Recibido:* "+fmtDate(o.createdAt)+"\n📅 *Completado:* "+fmtDate(o.completedAt)+"\n"+(o.warranty?"\n🛡️ *Garantía:* "+o.warranty+"\n":"")+"\n_Su equipo está listo. ¡Gracias por su confianza!_";
       }
-      window.open(`https://wa.me/${num}?text=${encodeURIComponent(msg)}`,"_blank");
+      window.open("https://wa.me/"+num+"?text="+encodeURIComponent(msg),"_blank");
     }
 
     // ══════════════════════════════════════════
     // EVENTS
     // ══════════════════════════════════════════
-    document.getElementById("btnNewOrder").addEventListener("click", initNewForm);
-    document.getElementById("btnCancelNew").addEventListener("click", ()=>{showView("list");renderList();});
-    document.getElementById("btnSaveOrder").addEventListener("click", saveNewOrder);
-    document.getElementById("btnAddAcc").addEventListener("click", addCustomAcc);
-    document.getElementById("accCustom").addEventListener("keydown", e=>{if(e.key==="Enter")addCustomAcc();});
-    document.getElementById("searchInput").addEventListener("input", renderList);
-    document.getElementById("fClientType").addEventListener("change", function(){
-      document.getElementById("fCompanyWrap").classList.toggle("hidden",this.value!=="Empresa");
-    });
-    document.getElementById("btnSettings").addEventListener("click", showSettings);
-    document.getElementById("fileImport").addEventListener("change", function(e){
-      if(e.target.files[0]) importExcel(e.target.files[0]);
-      e.target.value="";
-      document.querySelector(".modal-overlay")?.remove();
-    });
+    document.getElementById("btnNewOrder").addEventListener("click",initNewForm);
+    document.getElementById("btnCancelNew").addEventListener("click",()=>{showView("list");renderList();});
+    document.getElementById("btnSaveOrder").addEventListener("click",saveNewOrder);
+    document.getElementById("btnAddAcc").addEventListener("click",addCustomAcc);
+    document.getElementById("accCustom").addEventListener("keydown",e=>{if(e.key==="Enter")addCustomAcc();});
+    document.getElementById("searchInput").addEventListener("input",renderList);
+    document.getElementById("fClientType").addEventListener("change",function(){document.getElementById("fCompanyWrap").classList.toggle("hidden",this.value!=="Empresa");});
+    document.getElementById("btnSettings").addEventListener("click",showSettings);
+    document.getElementById("fileImport").addEventListener("change",function(e){if(e.target.files[0])importExcel(e.target.files[0]);e.target.value="";document.querySelector(".modal-overlay")?.remove();});
 
-    // ── INIT ──
     updateSyncBadge();
     renderList();
   </script>
