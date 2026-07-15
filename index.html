@@ -230,7 +230,7 @@
           resolve(data);
         };
 
-        const url = GOOGLE_SCRIPT_URL + "?callback=" + cbName + "&" + params;
+        const url = GOOGLE_SCRIPT_URL + "?jsonpcb=" + cbName + "&" + params;
         const script = document.createElement("script");
         script.id = cbName;
         script.src = url;
