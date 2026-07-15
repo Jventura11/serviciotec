@@ -202,7 +202,7 @@
     function showToast(msg,duration=3000){const t=document.getElementById("toast");t.textContent=msg;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),duration);}
 
     // ══════════════════════════════════════════
-    // GOOGLE SHEETS SYNC (FIXED)
+    // GOOGLE SHEETS SYNC (JSONP - sin CORS)
     // ══════════════════════════════════════════
     function updateSyncBadge(){
       const b=document.getElementById("syncBadge"),t=document.getElementById("syncText");
@@ -210,85 +210,90 @@
       else{b.className="sync-status disconnected";t.textContent="Sin sync";}
     }
 
-    // Google Apps Script returns 302 redirect. We use fetch + follow redirect.
-    async function googlePost(data) {
-      if (!GOOGLE_SCRIPT_URL) return null;
-      try {
-        const res = await fetch(GOOGLE_SCRIPT_URL, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify(data),
-          redirect: "follow"
-        });
-        const text = await res.text();
-        try { return JSON.parse(text); } catch(e) { return { raw: text }; }
-      } catch(err) {
-        console.error("Google sync error:", err);
-        return { error: err.message };
-      }
-    }
+    // JSONP: inyecta un <script> tag que llama a Google sin CORS
+    let jsonpCounter = 0;
+    function jsonpRequest(params) {
+      return new Promise(function(resolve, reject) {
+        const cbName = "_stcb_" + (++jsonpCounter);
+        const timeout = setTimeout(function() {
+          delete window[cbName];
+          const el = document.getElementById(cbName);
+          if (el) el.remove();
+          reject(new Error("Timeout: Google no respondió en 15 segundos"));
+        }, 15000);
 
-    async function googleGet() {
-      if (!GOOGLE_SCRIPT_URL) return null;
-      try {
-        const res = await fetch(GOOGLE_SCRIPT_URL, { redirect: "follow" });
-        const text = await res.text();
-        try { return JSON.parse(text); } catch(e) { return { raw: text }; }
-      } catch(err) {
-        console.error("Google fetch error:", err);
-        return { error: err.message };
-      }
+        window[cbName] = function(data) {
+          clearTimeout(timeout);
+          delete window[cbName];
+          const el = document.getElementById(cbName);
+          if (el) el.remove();
+          resolve(data);
+        };
+
+        const url = GOOGLE_SCRIPT_URL + "?callback=" + cbName + "&" + params;
+        const script = document.createElement("script");
+        script.id = cbName;
+        script.src = url;
+        script.onerror = function() {
+          clearTimeout(timeout);
+          delete window[cbName];
+          script.remove();
+          reject(new Error("Error de red al contactar Google"));
+        };
+        document.body.appendChild(script);
+      });
     }
 
     async function syncToGoogle(action, data) {
-      const result = await googlePost({ action, ...data });
-      if (result) console.log("Sync result:", result);
+      if (!GOOGLE_SCRIPT_URL) return;
+      try {
+        let params = "action=" + action;
+        if (data && data.order) params += "&data=" + encodeURIComponent(JSON.stringify(data.order));
+        if (data && data.id) params += "&id=" + encodeURIComponent(data.id);
+        await jsonpRequest(params);
+        console.log("Sync OK:", action);
+      } catch(e) { console.warn("Sync error:", e.message); }
     }
 
     async function testConnection() {
       if (!GOOGLE_SCRIPT_URL) { showToast("⚠️ Primero guarda la URL"); return; }
       const logBox = document.getElementById("logBox");
       if (logBox) logBox.textContent = "⏳ Probando conexión...\n";
-
       showToast("⏳ Probando conexión...");
-      const result = await googleGet();
-
-      if (logBox) {
-        logBox.textContent += "Respuesta: " + JSON.stringify(result, null, 2) + "\n";
-      }
-      if (result && result.success) {
-        showToast("✅ ¡Conexión exitosa! " + (result.orders?.length || 0) + " órdenes en la hoja");
-      } else if (result && result.error) {
-        showToast("❌ Error: " + result.error, 5000);
-      } else {
-        showToast("⚠️ Respuesta inesperada. Revisa el log.", 5000);
+      try {
+        const result = await jsonpRequest("action=test");
+        if (logBox) logBox.textContent += "✅ Respuesta: " + JSON.stringify(result, null, 2) + "\n";
+        if (result && result.success) {
+          showToast("✅ ¡Conexión exitosa! " + (result.count || 0) + " órdenes en la hoja");
+        } else {
+          showToast("❌ Error: " + (result.error || "Respuesta inválida"), 5000);
+        }
+      } catch(e) {
+        if (logBox) logBox.textContent += "❌ Error: " + e.message + "\n";
+        showToast("❌ " + e.message, 5000);
       }
     }
 
     async function syncAllToGoogle() {
       if (!GOOGLE_SCRIPT_URL) { showToast("⚠️ Configura la URL primero"); return; }
       showToast("⏳ Subiendo órdenes...");
-      const result = await googlePost({ action: "sync", orders });
-      if (result && result.success) {
-        showToast("✅ " + (result.count || orders.length) + " órdenes sincronizadas");
-      } else {
-        showToast("❌ Error al sincronizar. Revisa el log.", 5000);
-        console.error("Sync result:", result);
-      }
+      try {
+        const result = await jsonpRequest("action=sync&data=" + encodeURIComponent(JSON.stringify(orders)));
+        if (result && result.success) showToast("✅ " + (result.count || orders.length) + " órdenes sincronizadas");
+        else showToast("❌ " + (result.error || "Error"), 5000);
+      } catch(e) { showToast("❌ " + e.message, 5000); }
     }
 
     async function pullFromGoogle() {
       if (!GOOGLE_SCRIPT_URL) { showToast("⚠️ Configura la URL primero"); return; }
       showToast("⏳ Descargando de Google Sheets...");
-      const result = await googleGet();
-      if (result && result.success && result.orders) {
-        orders = result.orders;
-        save(); renderList();
-        showToast("✅ " + orders.length + " órdenes descargadas");
-      } else {
-        showToast("❌ Error al descargar", 5000);
-        console.error("Pull result:", result);
-      }
+      try {
+        const result = await jsonpRequest("action=read");
+        if (result && result.success && result.orders) {
+          orders = result.orders; save(); renderList();
+          showToast("✅ " + orders.length + " órdenes descargadas");
+        } else showToast("❌ " + (result.error || "Error"), 5000);
+      } catch(e) { showToast("❌ " + e.message, 5000); }
     }
 
     // ══════════════════════════════════════════
