@@ -193,6 +193,7 @@
     let orders=JSON.parse(localStorage.getItem("serviciotec_orders")||"[]");
     let currentFilter="all",selectedAcc=[],currentOrderId=null;
     let GOOGLE_SCRIPT_URL=localStorage.getItem("serviciotec_gscript_url")||"";
+    let WA_PREF=localStorage.getItem("serviciotec_wa_pref")||"ask"; // "whatsapp", "business", "ask"
 
     function save(){localStorage.setItem("serviciotec_orders",JSON.stringify(orders));}
     function genId(){const n=new Date(),y=String(n.getFullYear()).slice(2),m=String(n.getMonth()+1).padStart(2,"0"),d=String(n.getDate()).padStart(2,"0");return`OS-${y}${m}${d}-${Math.floor(Math.random()*900+100)}`;}
@@ -362,6 +363,18 @@
       overlay.innerHTML=`
         <div class="modal">
           <h3>⚙️ Configuración</h3>
+          <div class="card" style="margin-bottom:16px">
+            <div class="section-label" style="color:#25D366">📱 WhatsApp</div>
+            <div class="field">
+              <label>App preferida para enviar mensajes</label>
+              <select id="settingsWaPref" style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px">
+                <option value="ask" ${WA_PREF==="ask"?"selected":""}>Preguntar siempre</option>
+                <option value="whatsapp" ${WA_PREF==="whatsapp"?"selected":""}>WhatsApp</option>
+                <option value="business" ${WA_PREF==="business"?"selected":""}>WhatsApp Business</option>
+              </select>
+            </div>
+            <button class="btn btn-whatsapp" onclick="saveWaPref()">💾 Guardar preferencia</button>
+          </div>
           <div class="card" style="margin-bottom:16px">
             <div class="section-label" style="color:#217346">📊 Excel</div>
             <div class="actions" style="gap:8px">
@@ -565,6 +578,46 @@
     // ══════════════════════════════════════════
     // WHATSAPP
     // ══════════════════════════════════════════
+    function saveWaPref(){
+      const val=document.getElementById("settingsWaPref").value;
+      WA_PREF=val;
+      localStorage.setItem("serviciotec_wa_pref",val);
+      showToast("✅ Preferencia guardada: "+(val==="ask"?"Preguntar siempre":val==="whatsapp"?"WhatsApp":"WhatsApp Business"));
+    }
+
+    function openWA(num, msg, app) {
+      const encoded = encodeURIComponent(msg);
+      if (app === "business") {
+        // Intent URL para abrir WhatsApp Business directamente en Android
+        const intent = "intent://send?phone=" + num + "&text=" + encoded + "#Intent;scheme=whatsapp;package=com.whatsapp.w4b;S.browser_fallback_url=" + encodeURIComponent("https://wa.me/" + num + "?text=" + encoded) + ";end";
+        window.location.href = intent;
+        // Fallback si intent no funciona (desktop/iOS)
+        setTimeout(function(){ window.open("https://wa.me/" + num + "?text=" + encoded, "_blank"); }, 500);
+      } else {
+        // WhatsApp regular
+        const intent = "intent://send?phone=" + num + "&text=" + encoded + "#Intent;scheme=whatsapp;package=com.whatsapp;S.browser_fallback_url=" + encodeURIComponent("https://wa.me/" + num + "?text=" + encoded) + ";end";
+        window.location.href = intent;
+        setTimeout(function(){ window.open("https://wa.me/" + num + "?text=" + encoded, "_blank"); }, 500);
+      }
+    }
+
+    function showWAChooser(num, msg) {
+      const overlay = document.createElement("div");
+      overlay.className = "modal-overlay";
+      overlay.innerHTML = '<div class="modal" style="max-width:340px;text-align:center">' +
+        '<h3 style="margin-bottom:4px">Enviar por...</h3>' +
+        '<p style="color:var(--muted);font-size:13px;margin-bottom:16px">Elige la app para enviar el mensaje</p>' +
+        '<div class="actions" style="gap:10px">' +
+        '<button class="btn btn-whatsapp" onclick="this.closest(\'.modal-overlay\').remove();openWA(\'' + num + '\',waMsg,\'whatsapp\')" style="background:#25D366">📱 WhatsApp</button>' +
+        '<button class="btn btn-whatsapp" onclick="this.closest(\'.modal-overlay\').remove();openWA(\'' + num + '\',waMsg,\'business\')" style="background:#128C7E">💼 WhatsApp Business</button>' +
+        '<button class="btn btn-outline" onclick="this.closest(\'.modal-overlay\').remove()" style="margin-top:4px">Cancelar</button>' +
+        '</div></div>';
+      document.body.appendChild(overlay);
+      overlay.addEventListener("click", function(e) { if (e.target === overlay) overlay.remove(); });
+    }
+
+    var waMsg = ""; // temp storage for chooser
+
     function sendWA(type,id){
       const o=orders.find(x=>x.id===id);const phone=o.phone.replace(/\D/g,"");const num=phone.startsWith("52")?phone:"52"+phone;
       let msg="";
@@ -575,7 +628,13 @@
         const total=(o.laborCost||0)+(o.partsCost||0);
         msg="✅ *ORDEN COMPLETADA: "+o.id+"*\n━━━━━━━━━━━━━━━━━━━━━\n\n👤 *Cliente:* "+o.clientName+"\n🖥️ *Equipo:* "+o.equipmentType+" - "+o.brand+" "+o.model+"\n\n🔧 *Diagnóstico:*\n"+(o.diagnosis||"N/A")+"\n\n🛠️ *Solución aplicada:*\n"+o.solution+"\n"+(o.partsUsed?"\n🔩 *Refacciones:*\n"+o.partsUsed+"\n":"")+"\n💰 *Mano de obra:* "+fmtCur(o.laborCost||0)+"\n"+(o.partsCost?"💰 *Refacciones:* "+fmtCur(o.partsCost)+"\n":"")+"💰 *TOTAL:* "+fmtCur(total)+"\n\n📅 *Recibido:* "+fmtDate(o.createdAt)+"\n📅 *Completado:* "+fmtDate(o.completedAt)+"\n"+(o.warranty?"\n🛡️ *Garantía:* "+o.warranty+"\n":"")+"\n_Su equipo está listo. ¡Gracias por su confianza!_";
       }
-      window.open("https://wa.me/"+num+"?text="+encodeURIComponent(msg),"_blank");
+
+      waMsg = msg;
+      if (WA_PREF === "ask") {
+        showWAChooser(num, msg);
+      } else {
+        openWA(num, msg, WA_PREF);
+      }
     }
 
     // ══════════════════════════════════════════
