@@ -523,6 +523,7 @@
         html+='<div style="margin-top:4px;font-size:12px;color:var(--muted)">Completado: '+fmtDate(o.completedAt)+'</div></div>';
       }
       html+='<div class="card actions">';
+      html+='<button class="btn btn-outline" onclick="editOrder(\''+o.id+'\')" style="border-color:#F59E0B;color:#F59E0B">✏️ Editar orden</button>';
       if(o.status==="recibido"||o.status==="en_proceso")html+='<button class="btn btn-whatsapp" onclick="sendWA(\'reception\',\''+o.id+'\')">📱 Enviar recepción por WhatsApp</button>';
       if(o.status==="recibido")html+='<button class="btn btn-primary" onclick="changeStatus(\''+o.id+'\',\'en_proceso\')">Marcar "En proceso"</button>';
       if(o.status==="recibido"||o.status==="en_proceso")html+='<button class="btn btn-success" onclick="showCloseForm(\''+o.id+'\')">Cerrar orden (registrar solución)</button>';
@@ -561,6 +562,142 @@
       o.warranty=document.getElementById("cWarranty").value.trim();
       o.status="terminado";o.completedAt=new Date().toISOString();
       save();syncToGoogle("update",{order:o});openDetail(id);showToast("✅ Orden cerrada");
+    }
+
+    // ══════════════════════════════════════════
+    // EDITAR ORDEN
+    // ══════════════════════════════════════════
+    var editAcc = [];
+
+    function editOrder(id) {
+      const o = orders.find(x => x.id === id);
+      if (!o) return;
+      editAcc = o.accessories ? [...o.accessories] : [];
+      const isComplete = o.status === "terminado" || o.status === "entregado";
+      const EQUIP = ["Laptop","PC de escritorio","Impresora","Router/Switch","Servidor","Monitor","Otro"];
+
+      const equipOpts = EQUIP.map(function(t){ return '<option'+(o.equipmentType===t?' selected':'')+'>'+t+'</option>'; }).join("");
+      const statusOpts = Object.entries(STATUS_LABELS).map(function(e){ return '<option value="'+e[0]+'"'+(o.status===e[0]?' selected':'')+'>'+e[1]+'</option>'; }).join("");
+
+      let html = '<div class="header-flex"><h2 style="font-size:18px">✏️ Editar: '+o.id+'</h2><button class="btn-ghost" onclick="openDetail(\''+id+'\')">Cancelar</button></div>';
+
+      // Status
+      html += '<div class="card"><div class="section-label" style="color:#F59E0B">Estado</div>';
+      html += '<div class="field"><label>Estado de la orden</label><select id="eStatus">'+statusOpts+'</select></div></div>';
+
+      // Client
+      html += '<div class="card"><div class="section-label">Datos del cliente</div>';
+      html += '<div class="row"><div class="field"><label>Tipo</label><select id="eClientType"><option'+(o.clientType==="Particular"?" selected":"")+'>Particular</option><option'+(o.clientType==="Empresa"?" selected":"")+'>Empresa</option></select></div>';
+      html += '<div class="field flex2"><label>Nombre *</label><input id="eClientName" value="'+escH(o.clientName)+'"></div></div>';
+      html += '<div class="field'+(o.clientType!=="Empresa"?" hidden":"")+'" id="eCompanyWrap"><label>Empresa</label><input id="eCompany" value="'+escH(o.company||"")+'"></div>';
+      html += '<div class="row"><div class="field"><label>Teléfono *</label><input id="ePhone" value="'+escH(o.phone)+'" type="tel"></div>';
+      html += '<div class="field"><label>Email</label><input id="eEmail" value="'+escH(o.email||"")+'"></div></div></div>';
+
+      // Equipment
+      html += '<div class="card"><div class="section-label">Equipo</div>';
+      html += '<div class="row"><div class="field"><label>Tipo de equipo</label><select id="eEquipType">'+equipOpts+'</select></div>';
+      html += '<div class="field"><label>Marca *</label><input id="eBrand" value="'+escH(o.brand)+'"></div></div>';
+      html += '<div class="row"><div class="field"><label>Modelo</label><input id="eModel" value="'+escH(o.model||"")+'"></div>';
+      html += '<div class="field"><label>No. de serie</label><input id="eSerial" value="'+escH(o.serial||"")+'"></div></div></div>';
+
+      // Accessories
+      html += '<div class="card"><div class="section-label">Accesorios entregados</div>';
+      html += '<div class="chips" id="eAccChips"></div>';
+      html += '<div class="acc-row"><input id="eAccCustom" placeholder="Agregar otro accesorio..."><button class="btn btn-outline btn-sm" onclick="addEditAcc()">+</button></div>';
+      html += '<div class="selected-chips" id="eAccSelected"></div></div>';
+
+      // Issues
+      html += '<div class="card"><div class="section-label">Fallas y observaciones</div>';
+      html += '<div class="field"><label>Fallas reportadas *</label><textarea id="eIssues">'+escH(o.reportedIssues)+'</textarea></div>';
+      html += '<div class="field"><label>Observaciones del técnico</label><textarea id="eObservations" style="min-height:60px">'+escH(o.observations||"")+'</textarea></div>';
+      html += '<div class="field"><label>Costo estimado</label><input id="eEstCost" type="number" value="'+(o.estimatedCost||"")+'"></div></div>';
+
+      // Solution (if completed)
+      if (isComplete) {
+        html += '<div class="card" style="border-left:4px solid var(--success)"><div class="section-label green">Solución</div>';
+        html += '<div class="field"><label>Diagnóstico</label><textarea id="eDiag">'+escH(o.diagnosis||"")+'</textarea></div>';
+        html += '<div class="field"><label>Solución aplicada</label><textarea id="eSol">'+escH(o.solution||"")+'</textarea></div>';
+        html += '<div class="field"><label>Refacciones utilizadas</label><textarea id="eParts" style="min-height:50px">'+escH(o.partsUsed||"")+'</textarea></div>';
+        html += '<div class="row"><div class="field"><label>Mano de obra ($)</label><input id="eLabor" type="number" value="'+(o.laborCost||"")+'"></div>';
+        html += '<div class="field"><label>Refacciones ($)</label><input id="ePartsCost" type="number" value="'+(o.partsCost||"")+'"></div></div>';
+        html += '<div class="field"><label>Garantía</label><input id="eWarranty" value="'+escH(o.warranty||"")+'"></div></div>';
+      }
+
+      html += '<div class="actions-row" style="margin-bottom:40px"><button class="btn btn-outline" onclick="openDetail(\''+id+'\')">Cancelar</button>';
+      html += '<button class="btn btn-primary" onclick="saveEdit(\''+id+'\','+isComplete+')" style="background:#F59E0B">💾 Guardar cambios</button></div>';
+
+      document.getElementById("detailContainer").innerHTML = html;
+      renderEditAccChips();
+
+      // Event for company toggle
+      document.getElementById("eClientType").addEventListener("change", function(){
+        document.getElementById("eCompanyWrap").classList.toggle("hidden", this.value !== "Empresa");
+      });
+      document.getElementById("eAccCustom").addEventListener("keydown", function(e){ if(e.key==="Enter") addEditAcc(); });
+    }
+
+    function escH(s) { return String(s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+    function renderEditAccChips() {
+      var el1 = document.getElementById("eAccChips");
+      var el2 = document.getElementById("eAccSelected");
+      if (!el1) return;
+      el1.innerHTML = COMMON_ACC.map(function(a){
+        return '<span class="chip '+(editAcc.indexOf(a)>=0?'selected':'')+'" onclick="toggleEditAcc(\''+a+'\')">'+(editAcc.indexOf(a)>=0?'✓ ':'+ ')+a+'</span>';
+      }).join("");
+      el2.innerHTML = editAcc.map(function(a,i){
+        return '<span class="chip">'+a+' <button class="chip-remove" onclick="removeEditAcc('+i+')">×</button></span>';
+      }).join("");
+    }
+    function toggleEditAcc(name) {
+      var idx = editAcc.indexOf(name);
+      if (idx >= 0) editAcc.splice(idx, 1); else editAcc.push(name);
+      renderEditAccChips();
+    }
+    function removeEditAcc(i) { editAcc.splice(i, 1); renderEditAccChips(); }
+    function addEditAcc() {
+      var inp = document.getElementById("eAccCustom");
+      var v = inp.value.trim();
+      if (v && editAcc.indexOf(v) < 0) { editAcc.push(v); renderEditAccChips(); }
+      inp.value = "";
+    }
+
+    function saveEdit(id, isComplete) {
+      var name = document.getElementById("eClientName").value.trim();
+      var phone = document.getElementById("ePhone").value.trim();
+      var brand = document.getElementById("eBrand").value.trim();
+      var issues = document.getElementById("eIssues").value.trim();
+      if (!name || !phone || !brand || !issues) { alert("Complete los campos obligatorios (*)"); return; }
+
+      var o = orders.find(function(x){ return x.id === id; });
+      o.status = document.getElementById("eStatus").value;
+      o.clientType = document.getElementById("eClientType").value;
+      o.clientName = name;
+      o.company = document.getElementById("eCompany").value.trim();
+      o.phone = phone;
+      o.email = document.getElementById("eEmail").value.trim();
+      o.equipmentType = document.getElementById("eEquipType").value;
+      o.brand = brand;
+      o.model = document.getElementById("eModel").value.trim();
+      o.serial = document.getElementById("eSerial").value.trim();
+      o.accessories = [].concat(editAcc);
+      o.reportedIssues = issues;
+      o.observations = document.getElementById("eObservations").value.trim();
+      o.estimatedCost = parseFloat(document.getElementById("eEstCost").value) || null;
+
+      if (isComplete) {
+        o.diagnosis = document.getElementById("eDiag").value.trim();
+        o.solution = document.getElementById("eSol").value.trim();
+        o.partsUsed = document.getElementById("eParts").value.trim();
+        o.laborCost = parseFloat(document.getElementById("eLabor").value) || 0;
+        o.partsCost = parseFloat(document.getElementById("ePartsCost").value) || 0;
+        o.warranty = document.getElementById("eWarranty").value.trim();
+      }
+
+      save();
+      syncToGoogle("update", { order: o });
+      openDetail(id);
+      showToast("✅ Orden actualizada");
     }
 
     function changeStatus(id,status){
@@ -623,10 +760,10 @@
       let msg="";
       if(type==="reception"){
         const acc=o.accessories?.length?o.accessories.join(", "):"Ninguno";
-        msg="*JV COMPUTERS*\n 🔧*ORDEN DE SERVICIO: "+o.id+"*\n━━━━━━━━━━━━━━━━━━━━━\n\n👤 *Cliente:* "+o.clientName+"\n"+(o.clientType==="Empresa"?"🏢 *Empresa:* "+o.company+"\n":"")+"📱 *Teléfono:* "+o.phone+"\n"+(o.email?"📧 *Email:* "+o.email+"\n":"")+"\n🖥️ *Equipo:* "+o.equipmentType+"\n📋 *Marca/Modelo:* "+o.brand+" "+o.model+"\n🔢 *No. Serie:* "+(o.serial||"N/A")+"\n\n📦 *Accesorios entregados:*\n"+acc+"\n\n⚠️ *Fallas reportadas:*\n"+o.reportedIssues+"\n"+(o.observations?"\n📝 *Observaciones:*\n"+o.observations+"\n":"")+"\n📅 *Fecha de recepción:* "+fmtDate(o.createdAt)+"\n\n_Conserve este mensaje como comprobante._";
+        msg="🔧 *ORDEN DE SERVICIO: "+o.id+"*\n━━━━━━━━━━━━━━━━━━━━━\n\n👤 *Cliente:* "+o.clientName+"\n"+(o.clientType==="Empresa"?"🏢 *Empresa:* "+o.company+"\n":"")+"📱 *Teléfono:* "+o.phone+"\n"+(o.email?"📧 *Email:* "+o.email+"\n":"")+"\n🖥️ *Equipo:* "+o.equipmentType+"\n📋 *Marca/Modelo:* "+o.brand+" "+o.model+"\n🔢 *No. Serie:* "+(o.serial||"N/A")+"\n\n📦 *Accesorios entregados:*\n"+acc+"\n\n⚠️ *Fallas reportadas:*\n"+o.reportedIssues+"\n"+(o.observations?"\n📝 *Observaciones:*\n"+o.observations+"\n":"")+"\n📅 *Fecha de recepción:* "+fmtDate(o.createdAt)+"\n\n_Conserve este mensaje como comprobante._";
       }else{
         const total=(o.laborCost||0)+(o.partsCost||0);
-        msg="*JV COMPUTERS*\n ✅*ORDEN COMPLETADA: "+o.id+"*\n━━━━━━━━━━━━━━━━━━━━━\n\n👤 *Cliente:* "+o.clientName+"\n🖥️ *Equipo:* "+o.equipmentType+" - "+o.brand+" "+o.model+"\n\n🔧 *Diagnóstico:*\n"+(o.diagnosis||"N/A")+"\n\n🛠️ *Solución aplicada:*\n"+o.solution+"\n"+(o.partsUsed?"\n🔩 *Refacciones:*\n"+o.partsUsed+"\n":"")+"\n💰 *Mano de obra:* "+fmtCur(o.laborCost||0)+"\n"+(o.partsCost?"💰 *Refacciones:* "+fmtCur(o.partsCost)+"\n":"")+"💰 *TOTAL:* "+fmtCur(total)+"\n\n📅 *Recibido:* "+fmtDate(o.createdAt)+"\n📅 *Completado:* "+fmtDate(o.completedAt)+"\n"+(o.warranty?"\n🛡️ *Garantía:* "+o.warranty+"\n":"")+"\n_Su equipo está listo. ¡Gracias por su confianza!_";
+        msg="✅ *ORDEN COMPLETADA: "+o.id+"*\n━━━━━━━━━━━━━━━━━━━━━\n\n👤 *Cliente:* "+o.clientName+"\n🖥️ *Equipo:* "+o.equipmentType+" - "+o.brand+" "+o.model+"\n\n🔧 *Diagnóstico:*\n"+(o.diagnosis||"N/A")+"\n\n🛠️ *Solución aplicada:*\n"+o.solution+"\n"+(o.partsUsed?"\n🔩 *Refacciones:*\n"+o.partsUsed+"\n":"")+"\n💰 *Mano de obra:* "+fmtCur(o.laborCost||0)+"\n"+(o.partsCost?"💰 *Refacciones:* "+fmtCur(o.partsCost)+"\n":"")+"💰 *TOTAL:* "+fmtCur(total)+"\n\n📅 *Recibido:* "+fmtDate(o.createdAt)+"\n📅 *Completado:* "+fmtDate(o.completedAt)+"\n"+(o.warranty?"\n🛡️ *Garantía:* "+o.warranty+"\n":"")+"\n_Su equipo está listo. ¡Gracias por su confianza!_";
       }
 
       waMsg = msg;
