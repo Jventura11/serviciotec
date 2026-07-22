@@ -121,6 +121,7 @@
       <span class="sync-status disconnected" id="syncBadge" title="Google Sheets no configurado">
         <span class="dot"></span><span id="syncText">Sin sync</span>
       </span>
+      <button class="header-btn" id="btnRefresh" title="Actualizar desde Google Sheets">🔄</button>
       <button class="header-btn" id="btnSettings" title="Configuración">⚙️</button>
     </div>
   </div>
@@ -519,6 +520,10 @@
         html+='<hr class="divider"><div class="detail-row"><span class="detail-label">Mano de obra</span><span class="detail-value">'+fmtCur(o.laborCost||0)+'</span></div>';
         if(o.partsCost>0)html+='<div class="detail-row"><span class="detail-label">Refacciones</span><span class="detail-value">'+fmtCur(o.partsCost)+'</span></div>';
         html+='<div class="detail-row total-row"><span class="detail-label">Total</span><span class="detail-value">'+fmtCur(total)+'</span></div>';
+        if(o.advance>0){
+          html+='<div class="detail-row"><span class="detail-label">Anticipo</span><span class="detail-value" style="color:var(--danger)">-'+fmtCur(o.advance)+'</span></div>';
+          html+='<div class="detail-row total-row"><span class="detail-label">Saldo final</span><span class="detail-value">'+fmtCur(total-o.advance)+'</span></div>';
+        }
         if(o.warranty)html+='<div class="detail-row"><span class="detail-label">Garantía</span><span class="detail-value">'+o.warranty+'</span></div>';
         html+='<div style="margin-top:4px;font-size:12px;color:var(--muted)">Completado: '+fmtDate(o.completedAt)+'</div></div>';
       }
@@ -543,12 +548,30 @@
           <div class="field"><label>Diagnóstico</label><textarea id="cDiag" placeholder="Causa raíz...">${o.diagnosis||""}</textarea></div>
           <div class="field"><label>Solución aplicada *</label><textarea id="cSol" placeholder="¿Qué se hizo?">${o.solution||""}</textarea></div>
           <div class="field"><label>Refacciones utilizadas</label><textarea id="cParts" style="min-height:50px" placeholder="Lista de refacciones">${o.partsUsed||""}</textarea></div>
-          <div class="row"><div class="field"><label>Mano de obra ($)</label><input id="cLabor" type="number" placeholder="0.00" value="${o.laborCost||""}"></div>
-          <div class="field"><label>Refacciones ($)</label><input id="cPartsCost" type="number" placeholder="0.00" value="${o.partsCost||""}"></div></div>
+          <div class="row"><div class="field"><label>Mano de obra ($)</label><input id="cLabor" type="number" placeholder="0.00" value="${o.laborCost||""}" oninput="updateSaldo()"></div>
+          <div class="field"><label>Refacciones ($)</label><input id="cPartsCost" type="number" placeholder="0.00" value="${o.partsCost||""}" oninput="updateSaldo()"></div></div>
+          <div class="field"><label>Anticipo ($)</label><input id="cAdvance" type="number" placeholder="0.00" value="${o.advance||""}" oninput="updateSaldo()"></div>
+          <div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:8px;padding:12px;margin-bottom:14px">
+            <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--muted);margin-bottom:4px"><span>Total del servicio:</span><span id="saldoTotal">$0.00</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--muted);margin-bottom:4px"><span>Anticipo:</span><span id="saldoAdvance">-$0.00</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:16px;font-weight:800;color:var(--success);border-top:1px solid #BBF7D0;padding-top:6px;margin-top:4px"><span>Saldo final:</span><span id="saldoFinal">$0.00</span></div>
+          </div>
           <div class="field"><label>Garantía</label><input id="cWarranty" placeholder="Ej: 30 días" value="${o.warranty||""}"></div>
           <div class="actions-row"><button class="btn btn-outline" onclick="openDetail('${id}')">Cancelar</button>
           <button class="btn btn-success" onclick="closeOrder('${id}')">Cerrar orden</button></div>
         </div>`;
+      updateSaldo();
+    }
+
+    function updateSaldo(){
+      var labor=parseFloat(document.getElementById("cLabor")?.value)||0;
+      var parts=parseFloat(document.getElementById("cPartsCost")?.value)||0;
+      var adv=parseFloat(document.getElementById("cAdvance")?.value)||0;
+      var total=labor+parts;
+      var st=document.getElementById("saldoTotal"),sa=document.getElementById("saldoAdvance"),sf=document.getElementById("saldoFinal");
+      if(st)st.textContent=fmtCur(total);
+      if(sa)sa.textContent="-"+fmtCur(adv);
+      if(sf)sf.textContent=fmtCur(total-adv);
     }
 
     function closeOrder(id){
@@ -559,6 +582,7 @@
       o.partsUsed=document.getElementById("cParts").value.trim();
       o.laborCost=parseFloat(document.getElementById("cLabor").value)||0;
       o.partsCost=parseFloat(document.getElementById("cPartsCost").value)||0;
+      o.advance=parseFloat(document.getElementById("cAdvance").value)||0;
       o.warranty=document.getElementById("cWarranty").value.trim();
       o.status="terminado";o.completedAt=new Date().toISOString();
       save();syncToGoogle("update",{order:o});openDetail(id);showToast("✅ Orden cerrada");
@@ -620,6 +644,7 @@
         html += '<div class="field"><label>Refacciones utilizadas</label><textarea id="eParts" style="min-height:50px">'+escH(o.partsUsed||"")+'</textarea></div>';
         html += '<div class="row"><div class="field"><label>Mano de obra ($)</label><input id="eLabor" type="number" value="'+(o.laborCost||"")+'"></div>';
         html += '<div class="field"><label>Refacciones ($)</label><input id="ePartsCost" type="number" value="'+(o.partsCost||"")+'"></div></div>';
+        html += '<div class="field"><label>Anticipo ($)</label><input id="eAdvance" type="number" value="'+(o.advance||"")+'"></div>';
         html += '<div class="field"><label>Garantía</label><input id="eWarranty" value="'+escH(o.warranty||"")+'"></div></div>';
       }
 
@@ -688,6 +713,7 @@
       if (isComplete) {
         o.diagnosis = document.getElementById("eDiag").value.trim();
         o.solution = document.getElementById("eSol").value.trim();
+        o.advance = parseFloat(document.getElementById("eAdvance").value) || 0;
         o.partsUsed = document.getElementById("eParts").value.trim();
         o.laborCost = parseFloat(document.getElementById("eLabor").value) || 0;
         o.partsCost = parseFloat(document.getElementById("ePartsCost").value) || 0;
@@ -763,7 +789,7 @@
         msg="🔧 *ORDEN DE SERVICIO: "+o.id+"*\n━━━━━━━━━━━━━━━━━━━━━\n\n👤 *Cliente:* "+o.clientName+"\n"+(o.clientType==="Empresa"?"🏢 *Empresa:* "+o.company+"\n":"")+"📱 *Teléfono:* "+o.phone+"\n"+(o.email?"📧 *Email:* "+o.email+"\n":"")+"\n🖥️ *Equipo:* "+o.equipmentType+"\n📋 *Marca/Modelo:* "+o.brand+" "+o.model+"\n🔢 *No. Serie:* "+(o.serial||"N/A")+"\n\n📦 *Accesorios entregados:*\n"+acc+"\n\n⚠️ *Fallas reportadas:*\n"+o.reportedIssues+"\n"+(o.observations?"\n📝 *Observaciones:*\n"+o.observations+"\n":"")+"\n📅 *Fecha de recepción:* "+fmtDate(o.createdAt)+"\n\n_Conserve este mensaje como comprobante._";
       }else{
         const total=(o.laborCost||0)+(o.partsCost||0);
-        msg="✅ *ORDEN COMPLETADA: "+o.id+"*\n━━━━━━━━━━━━━━━━━━━━━\n\n👤 *Cliente:* "+o.clientName+"\n🖥️ *Equipo:* "+o.equipmentType+" - "+o.brand+" "+o.model+"\n\n🔧 *Diagnóstico:*\n"+(o.diagnosis||"N/A")+"\n\n🛠️ *Solución aplicada:*\n"+o.solution+"\n"+(o.partsUsed?"\n🔩 *Refacciones:*\n"+o.partsUsed+"\n":"")+"\n💰 *Mano de obra:* "+fmtCur(o.laborCost||0)+"\n"+(o.partsCost?"💰 *Refacciones:* "+fmtCur(o.partsCost)+"\n":"")+"💰 *TOTAL:* "+fmtCur(total)+"\n\n📅 *Recibido:* "+fmtDate(o.createdAt)+"\n📅 *Completado:* "+fmtDate(o.completedAt)+"\n"+(o.warranty?"\n🛡️ *Garantía:* "+o.warranty+"\n":"")+"\n_Su equipo está listo. ¡Gracias por su confianza!_";
+        msg="✅ *ORDEN COMPLETADA: "+o.id+"*\n━━━━━━━━━━━━━━━━━━━━━\n\n👤 *Cliente:* "+o.clientName+"\n🖥️ *Equipo:* "+o.equipmentType+" - "+o.brand+" "+o.model+"\n\n🔧 *Diagnóstico:*\n"+(o.diagnosis||"N/A")+"\n\n🛠️ *Solución aplicada:*\n"+o.solution+"\n"+(o.partsUsed?"\n🔩 *Refacciones:*\n"+o.partsUsed+"\n":"")+"\n💰 *Mano de obra:* "+fmtCur(o.laborCost||0)+"\n"+(o.partsCost?"💰 *Refacciones:* "+fmtCur(o.partsCost)+"\n":"")+"💰 *TOTAL:* "+fmtCur(total)+(o.advance>0?"\n💵 *Anticipo:* -"+fmtCur(o.advance)+"\n💰 *SALDO FINAL:* "+fmtCur(total-o.advance):"")+"\n\n📅 *Recibido:* "+fmtDate(o.createdAt)+"\n📅 *Completado:* "+fmtDate(o.completedAt)+"\n"+(o.warranty?"\n🛡️ *Garantía:* "+o.warranty+"\n":"")+"\n_Su equipo está listo. ¡Gracias por su confianza!_";
       }
 
       waMsg = msg;
@@ -785,6 +811,11 @@
     document.getElementById("searchInput").addEventListener("input",renderList);
     document.getElementById("fClientType").addEventListener("change",function(){document.getElementById("fCompanyWrap").classList.toggle("hidden",this.value!=="Empresa");});
     document.getElementById("btnSettings").addEventListener("click",showSettings);
+    document.getElementById("btnRefresh").addEventListener("click",function(){
+      var btn=this;btn.style.transform="rotate(360deg)";btn.style.transition="transform 0.6s";
+      setTimeout(function(){btn.style.transform="";btn.style.transition="";},700);
+      pullFromGoogle();
+    });
     document.getElementById("fileImport").addEventListener("change",function(e){if(e.target.files[0])importExcel(e.target.files[0]);e.target.value="";document.querySelector(".modal-overlay")?.remove();});
 
     updateSyncBadge();
